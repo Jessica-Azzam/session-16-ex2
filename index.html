@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <style>
+        /* styles.css */
+
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .game-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            width: 100%;
+
+        }
+
+        .game-container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        #player-name {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+            color: red;
+        }
+
+        #level {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        #message {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .boxes {
+            display: grid;
+            grid-template-columns: repeat(2, 180px);
+            grid-template-rows: repeat(2, 180px);
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            width: 180px;
+            height: 180px;
+            border-radius: 15px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .box:active {
+            transform: scale(0.95);
+        }
+
+        #box-0 {
+            background-color: #ff4c4c;
+            /* Red */
+        }
+
+        #box-1 {
+            background-color: #4cff4c;
+            /* Green */
+        }
+
+        #box-2 {
+            background-color: #4c4cff;
+            /* Blue */
+        }
+
+        #box-3 {
+            background-color: #ffff4c;
+            /* Yellow */
+        }
+
+        .highlight {
+            opacity: 1 !important;
+            box-shadow: 0 0 20px #fff;
+            animation: flash 0.4s ease-in-out;
+        }
+
+        @keyframes flash {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        #start-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            background-color: #555;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #start-button:hover {
+            background-color: #777;
+        }
+    </style>
+    <header class="game-header">
+        <div id="player-name">Welcome, Player!</div>
+        <div id="level">Level: 0</div>
+    </header>
+    <div class="game-container">
+
+        <div id="message">Press "Start Game" to Begin</div>
+        <div class="boxes">
+            <div class="box" id="box-0" data-index="0"></div>
+            <div class="box" id="box-1" data-index="1"></div>
+            <div class="box" id="box-2" data-index="2"></div>
+            <div class="box" id="box-3" data-index="3"></div>
+        </div>
+        <button id="start-button">Start Game</button>
+    </div>
+
+    <!-- Audio Elements for sounds -->
+    <audio id="sound-0" src="red.mp3"></audio>
+    <audio id="sound-1" src="green.mp3"></audio>
+    <audio id="sound-2" src="blue.mp3"></audio>
+    <audio id="sound-3" src="yellow.mp3"></audio>
+    <audio id="sound-error" src="wrong.mp3"></audio>
+
+    <script>
+        // Select DOM elements
+        const startButton = document.getElementById('start-button');
+        const messageDiv = document.getElementById('message');
+        const levelDiv = document.getElementById('level');
+        const playerNameDiv = document.getElementById('player-name');
+        const boxes = Array.from(document.getElementsByClassName('box'));
+
+        // Select audio elements
+        const sounds = [
+            document.getElementById('sound-0'),
+            document.getElementById('sound-1'),
+            document.getElementById('sound-2'),
+            document.getElementById('sound-3'),
+        ];
+        const soundWrong = document.getElementById('sound-error');
+
+        // Game variables
+        let sequence = [];
+        let userSequence = [];
+        let level = 0;
+        let clickable = false;
+        let playerName = '';
+
+        // Ask for player's name when the game starts
+        function askForPlayerName() {
+            playerName = prompt("Please enter your name:");
+            if (playerName === '' || playerName === null) {
+                playerName = "Player";
+            }
+            playerNameDiv.textContent = `Welcome, ${playerName}!`;
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startGame);
+        boxes.forEach(box => box.addEventListener('click', handleUserClick));
+
+        // Function to start the game
+        function startGame() {
+            askForPlayerName();
+            resetGame();
+            nextLevel();
+        }
+
+        // Function to reset the game variables
+        function resetGame() {
+            sequence = [];
+            userSequence = [];
+            level = 0;
+            levelDiv.textContent = `Level: ${level}`;
+            messageDiv.textContent = `Game Started! Remember the sequence.`;
+            startButton.disabled = true;
+        }
+
+        // Function to proceed to the next level
+        function nextLevel() {
+            level++;
+            levelDiv.textContent = `Level: ${level}`;
+            const randomBox = Math.floor(Math.random() * 4);
+            sequence.push(randomBox);
+            playSequence();
+        }
+
+        // Function to play the new box in the sequence
+        function playSequence() {
+            clickable = false;
+            const newBoxIndex = sequence[sequence.length - 1];
+            setTimeout(() => {
+                highlightBox(newBoxIndex);
+            }, 500);
+            setTimeout(() => {
+                clickable = true;
+                userSequence = [];
+                messageDiv.textContent = `Level ${level}: Your turn! Repeat the sequence.`;
+            }, 1000);
+        }
+        // Function to highlight a box
+        function highlightBox(index) {
+            const box = boxes[index];
+            box.classList.add('highlight');
+            sounds[index].currentTime = 0;
+            sounds[index].play();
+            setTimeout(() => {
+                box.classList.remove('highlight');
+            }, 400);
+        }
+
+        // Function to handle user clicks
+        function handleUserClick(event) {
+            if (!clickable) return;
+            const clickedBox = parseInt(event.target.getAttribute('data-index'));
+            userSequence.push(clickedBox);
+            highlightBox(clickedBox);
+
+            // Check if the latest click is correct
+            const currentStep = userSequence.length - 1;
+            if (userSequence[currentStep] !== sequence[currentStep]) {
+                soundWrong.currentTime = 0;
+                soundWrong.play(); // Play error sound
+                gameOver();
+                return;
+            }
+
+            // If the user has completed the sequence
+            if (userSequence.length === sequence.length) {
+                clickable = false;
+                messageDiv.textContent = 'Good job! Next level is starting...';
+                setTimeout(() => {
+                    nextLevel();
+                }, 1000);
+            }
+        }
+
+        // Function to handle game over
+        function gameOver() {
+            clickable = false;
+            messageDiv.textContent = `Game Over, ${playerName}! You reached level ${level}. Press "Start Game" to play again.`;
+            startButton.disabled = false;
+            sequence = [];
+            userSequence = [];
+            level = 0;
+            levelDiv.textContent = `Level: 0`;
+        }
+    </script>
+</body>
+
+</html>
